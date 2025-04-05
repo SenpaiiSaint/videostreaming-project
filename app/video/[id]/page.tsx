@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import VideoPlayer from "@/components/VideoPlayer";
@@ -11,18 +10,24 @@ interface Video {
   url: string;
 }
 
-export default function VideoPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function VideoPage({ params }: { params: Promise<{ id: string }> }) {
+  const [resolvedParams, setResolvedParams] = useState<{ id: string } | null>(null);
   const [video, setVideo] = useState<Video | null>(null);
 
   useEffect(() => {
+    params.then((p) => setResolvedParams(p));
+  }, [params]);
+
+  useEffect(() => {
+    if (resolvedParams) {
     fetch("/api/videos")
       .then((res) => res.json())
       .then((vids: Video[]) => {
-        const found = vids.find((v) => v.id === id);
+        const found = vids.find((v) => v.id === resolvedParams.id);
         setVideo(found ?? null);
       });
-  }, [id]);
+    }
+  }, [resolvedParams]);
 
   if (!video)
     return (
